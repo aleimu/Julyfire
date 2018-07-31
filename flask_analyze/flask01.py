@@ -22,8 +22,13 @@ flask: 微型web框架.
         - Flask()      # 核心功能类
         - url          # 封装了werkzeug.routing import Map, Rule 基于 Werkzeug 的路由模块
         - render_template # 封装了jinja2
-    - 点评:
-        - 对比 bottle.py框架, flask第一版的代码并不多, 但是有几个关键模块,没有自己实现.
+    - 总结:
+        - 如何理解wsgi, Werkzeug, flask之间的关系
+            Flask本身只是Werkzeug和Jinja2的之间的桥梁，前者实现一个合适的WSGI应用，后者处理模板。
+            Flask是一个基于Python开发并且依赖jinja2模板和Werkzeug WSGI服务的一个微型框架，对于Werkzeug，它只是工具包，其用于接收http请求并对请求进行预处理，然后触发(Flask类中的__call__)Flask框架，
+            开发人员基于Flask框架提供的功能对请求进行相应的处理，并返回给用户，如果要返回给用户复杂的内容时，需要借助jinja2模板来实现对模板的处理。将模板和数据进行渲染，将渲染后的字符串返回给用户浏览器。
+        - Werkzeug是一个WSGI工具包，它可以作为web框架的底层库，而WSGI是一个web应用和服务器通信的协议。
+        1- 对比 bottle.py框架, flask第一版的代码并不多, 但是有几个关键模块,没有自己实现.
         - 而 bottle.py 的 web框架核心组件, 除了依赖python自带的简单wsgiref.simple_server.make_server外基本都是自己实现的,未依赖任何其他第三方模块.
         - 可以查看template模板、bottle.add_route路由管理、bottle.match_url路由匹配的实现
     - 延伸:
