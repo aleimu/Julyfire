@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 签注说明:
-    - date: 2018-7-27
+    - date: 2018-7
     - author: lgj
     - 说明:
         - 删除部分无关紧要的原注释,不影响理解
         - 部分源码注释,作了精简翻译.
+        - 打断点真的很重要
 flask: 微型web框架.
     - 核心依赖:
         - Werkzeug :
@@ -21,10 +22,17 @@ flask: 微型web框架.
         - Flask()      # 核心功能类
         - url          # 封装了werkzeug.routing import Map, Rule 基于 Werkzeug 的路由模块
         - render_template # 封装了jinja2
-
     - 点评:
         - 对比 bottle.py框架, flask第一版的代码并不多, 但是有几个关键模块,没有自己实现.
-        - 而 bottle.py 的 web框架核心组件, 都是自己实现的,未依赖任何其他第三方模块.
+        - 而 bottle.py 的 web框架核心组件, 除了依赖python自带的简单wsgiref.simple_server.make_server外基本都是自己实现的,未依赖任何其他第三方模块.
+        - 可以查看template模板、bottle.add_route路由管理、bottle.match_url路由匹配的实现
+    - 延伸:
+    werkzeug.serving.WSGIRequestHandler#run_wsgi
+    werkzeug.serving.make_server
+    werkzeug.serving.BaseWSGIServer
+    werkzeug.local.Local
+    werkzeug.local.LocalStack
+    werkzeug.local.LocalProxy
 
 """
 
@@ -33,7 +41,7 @@ from __future__ import with_statement
 import os
 import sys
 
-from threading import local
+from threading import local     # 作为flask对外接口使用
 
 from jinja2 import (            # flask 部分模块实现,依赖 jinja2
     Environment,
@@ -43,27 +51,21 @@ from jinja2 import (            # flask 部分模块实现,依赖 jinja2
 
 
 # 说明:
-#   - flask 部分模块实现,严重依赖 werkzeug
-#   - werkzeug 最新版本,模块组织结构发生改变.
-#   - 故替换部分失效导包语句,请注意
-#   - 下面最后一条导包语句,已失效, 暂未找到有效的替换
+#   - flask 部分模块实现,严重依赖 werkzeug 参考资料 http://werkzeug-docs-cn.readthedocs.io/zh_CN/latest/tutorial.html#id1
+#   - werkzeug 最新版本,模块组织结构发生改变.部分失效导入注释后已换成最新可用的
 #
 from werkzeug.wrappers import Request as RequestBase, Response as ResponseBase    # 关键依赖
 from werkzeug.local import LocalStack, LocalProxy     # 文件末尾, _request_ctx_stack, current_app 中依赖
 from werkzeug.wsgi import SharedDataMiddleware        # Flask() 模块 中引用
 from werkzeug.utils import cached_property
-
 # from werkzeug import create_environ    # 已失效,此处注销,更换如下
 from werkzeug.test import create_environ
-
 from werkzeug.routing import Map, Rule  # Flask 的 URL 规则基于 Werkzeug 的路由模块
 from werkzeug.exceptions import HTTPException, InternalServerError
 from werkzeug.contrib.securecookie import SecureCookie
-
 # from werkzeug  import abort, redirect   # werkzeug 依赖: 本文件未使用,但导入以用作对外接口，已失效，更换如下
 from werkzeug.exceptions import abort
 from werkzeug.utils import redirect
-
 from jinja2 import Markup, escape         # jinja2 的依赖: 本文件未使用,但导入以用作 对外接口
 
 
@@ -98,9 +100,6 @@ except (ImportError, AttributeError):
 #   - 辅助模块:
 #       - _RequestGlobals()
 #       - _RequestContext()
-#
-# todo: 注解说明
-#
 ################################################################################
 
 class Request(RequestBase):       # 未独立实现, 依赖 werkzeug.Request
@@ -108,7 +107,7 @@ class Request(RequestBase):       # 未独立实现, 依赖 werkzeug.Request
         RequestBase.__init__(self, environ)
         self.endpoint = None
         self.view_args = None
-        print("environ:", environ)
+        print("Request environ:", environ)
 
 
 class Response(ResponseBase):     # 未独立实现, 依赖 werkzeug.Response
@@ -222,11 +221,13 @@ class _RequestContext(object):    # 请求上下文, 基本上保函了请求的
         """
 
 
-
-    def __enter__(self):    # 入栈
+    # 栈顶存放的是当前活跃的request，使用栈是为了获取当前的活跃request对象。
+    def __enter__(self):    # 请求的上下文入栈
         _request_ctx_stack.push(self)
+        print("get_ident of this request:",_request_ctx_stack.__ident_func__()) # 查看一下这个请求的上下文存储的key:vlaue 中key的值，也就是线程值或者协程，环境安装了greenlet时优先使用
+        # ('get_ident of this request:', <greenlet.greenlet object at 0x7f1baafe9410>)  ('get_ident of this request:', 3740)
 
-    def __exit__(self, exc_type, exc_value, tb):    #出栈
+    def __exit__(self, exc_type, exc_value, tb):    # 请求的上下文出栈
         if tb is None or not self.app.debug:
             _request_ctx_stack.pop()
 
@@ -280,7 +281,7 @@ def _get_package_path(name):     # 获取 模块包 路径, Flask() 中 引用
     except (KeyError, AttributeError):
         return os.getcwd()
 
-# 方便查询属性
+# 自定义方便查询属性
 def to_dict(instence):
     return instence.__dict__
 
@@ -304,6 +305,7 @@ class Flask(object):
     )
 
     def __init__(self, package_name):
+        print("Flask __init__ start!")
         self.debug = False     # 调试模式开关
         # 注意:
         #   - 这个参数,不是随便乱给的
@@ -343,6 +345,7 @@ class Flask(object):
             url_for=url_for,
             get_flashed_messages=get_flashed_messages
         )
+        print("Flask __init__ end!")
 
     # 加载 templates 目录文件
     def create_jinja_loader(self):
@@ -361,13 +364,14 @@ class Flask(object):
 
     # 对外运行接口: 借用werkzeug.run_simple 实现
     def run(self, host='localhost', port=5000, **options):
-        # from werkzeug import run_simple    # todo: 待深入, 关键依赖: 核心运行模块
-        from werkzeug.serving import run_simple
+        # from werkzeug import run_simple
+        from werkzeug.serving import run_simple # 关键依赖: 核心运行模块
         if 'debug' in options:
             self.debug = options.pop('debug')
         options.setdefault('use_reloader', self.debug)
         options.setdefault('use_debugger', self.debug)
-        return run_simple(host, port, self, **options)    # 依赖 werkzeug->werkzeug.serving.make_server->werkzeug.serving.BaseWSGIServer
+        return run_simple(host, port, self, **options)    # 依赖 werkzeug->werkzeug.serving.make_server->werkzeug.serving.BaseWSGIServer，
+        # 主要就是建立socket监听，绑定server、app，其中内容丰富还需深入
 
     def test_client(self):
         # from werkzeug import Client        # todo: 待深入, 关键依赖 已失效 更换如下
@@ -511,7 +515,16 @@ class Flask(object):
     def dispatch_request(self):
         try:
             endpoint, values = self.match_request()    # 请求匹配
-            return self.view_functions[endpoint](**values)
+            return self.view_functions[endpoint](**values)  # 视图处理集中的函数如下，以url为key，以对应的函数为value，返回的就是对应url下逻辑的处理结果
+
+            # 'view_functions': {
+            #     'index': < function index at 0x00000000034256D8 > ,
+            #     'hello4': < function hello4 at 0x0000000003425898 > ,
+            #     'hello3': < function hello3 at 0x0000000003425828 > ,
+            #     '/hello2': < function hello2 at 0x0000000003425668 > ,
+            #     'hello1': < function hello1 at 0x0000000003425748 >
+            # },
+
         except HTTPException, e:
             handler = self.error_handlers.get(e.code)
             if handler is None:
@@ -525,7 +538,7 @@ class Flask(object):
 
     # 返回响应
     def make_response(self, rv):
-        if isinstance(rv, self.response_class):
+        if isinstance(rv, self.response_class): # 适配自定义的response
             return rv
         if isinstance(rv, basestring):
             return self.response_class(rv)
@@ -550,20 +563,18 @@ class Flask(object):
             response = handler(response)
         return response
 
-    # 对外接口:
+    # flask的核心函数
     def wsgi_app(self, environ, start_response):
         """
-            app.wsgi_app = MyMiddleware(app.wsgi_app)
+            app.wsgi_app = MyMiddleware(app.wsgi_app)   中间层
         """
         with self.request_context(environ):     # 请求上下文
             rv = self.preprocess_request()      # 请求前, 预处理
             if rv is None:
-                rv = self.dispatch_request()    # 处理请求
-
+                rv = self.dispatch_request()    # 匹配视图函数、处理请求
             response = self.make_response(rv)            # 返回响应
             response = self.process_response(response)   # 返回响应前, 作清理工作
             print("tag1:",response)
-
             return response(environ, start_response)
 
     # 请求上下文
@@ -578,8 +589,17 @@ class Flask(object):
     def test_request_context(self, *args, **kwargs):
         return self.request_context(create_environ(*args, **kwargs))
 
-    def __call__(self, environ, start_response):
-        """Shortcut for :attr:`wsgi_app`"""
+    def __call__(self, environ, start_response):  # 类实例app变成一个可调用对象, 但是这个environ是怎么来的呢？--> 打断点可以看出 werkzeug.serving.WSGIRequestHandler --> application_iter = app(environ, start_response)
+        """适配wsgi规范
+        SocketServer.BaseServer#serve_forever 监听端口
+        r, w, e = _eintr_retry(select.select, [self], [], [],poll_interval)
+        if self in r:
+            self._handle_request_noblock()
+        当有请求进来后触发处理当前请求的逻辑，这是调用__call__的第一步
+        但其绑定是在run方法中的run_simple中
+        """
+        print("environ:",environ)
+        print("start_response:",start_response)
         return self.wsgi_app(environ, start_response)
 
 
@@ -587,19 +607,19 @@ class Flask(object):
 #                     全局上下文变量定义(context locals)
 # 说明:
 #   - 此处全局的 g, session, 需要深入理解
-#   - 需要深入去看 werkzeug.LocalStack() 的实现
-#   - 为了支持多线程, 线程无关的
+#   - 需要深入去看 werkzeug.LocalStack() 的实现 Local-->LocalStack-->LocalProxy 这三个的关系参考下面的链接
+#   https://www.jianshu.com/p/3f38b777a621，https://blog.csdn.net/barrysj/article/details/51519254
+#   python中有threading local处理方式，在多线程环境中将变量按照线程id区分，由于协程在Python web中广泛使用，所以threading local不再满足需要
+#   local中优先使用greenlet协程，其次是线程id。localstack相当于在本协程（线程）中将数据以stack的形式存储(通过封装local来实现)。
+#   LocalProxy就是local的代理。重载了很多运算符，方便变量值得动态更新和获取，
 #
 ###################################################################
 
-_request_ctx_stack = LocalStack()    # 依赖 werkzeug.LocalStack 模块
+_request_ctx_stack = LocalStack()    # 依赖 werkzeug.LocalStack 模块-->`Local`堆栈
 current_app = LocalProxy(lambda: _request_ctx_stack.top.app)
 request = LocalProxy(lambda: _request_ctx_stack.top.request)
 
-
-# 特别注意此处实现:
 #   - g: 请求上下文 栈对象
 #   - session: 请求上下文 栈对象
-#
-session = LocalProxy(lambda: _request_ctx_stack.top.session)    # flash()函数 中 引用
+session = LocalProxy(lambda: _request_ctx_stack.top.session)    # flash()函数中引用
 g = LocalProxy(lambda: _request_ctx_stack.top.g)
