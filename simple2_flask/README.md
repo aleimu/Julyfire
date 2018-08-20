@@ -41,8 +41,9 @@ server {
 
 ```
 #### SERVER_NAME 的坑
+首先将hosts中配置 172.16.2.193 test.yy.com
 
-在config中将 SERVER_NAME = 'test.yy.com:3000'
+再在config中将 SERVER_NAME = 'test.yy.com:3000'
 
 再将manager.py:30行的manager.run()改为app.run()来进行试验
 
