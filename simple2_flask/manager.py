@@ -18,7 +18,6 @@ app.permanent_session_lifetime = datetime.timedelta(seconds=24 * 60 * 60)
 manager = Manager(app)
 migrate = Migrate(app, db)
 
-
 def make_shell_context():
     return dict(app=app, User=User, db=db)
 

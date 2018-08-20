@@ -5,21 +5,22 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-class Config():
+class Config(object):
+    # flask config
+    SECRET_KEY = 'df6ebcb8-93c4-11e7-a2ab-9801a7aef71d'
+    SERVER_NAME = '0.0.0.0:3000' # PORT = 3000 HOST='0.0.0.0'在config中应该这样配置
     # DB Config
     SQLALCHEMY_DATABASE_URI = 'mysql://root:root@127.0.0.1:3306/test?charset=utf8'
     REDIS_URL = "redis://:@localhost:6379/1"
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     TOKEN_EXPIRE = 3600 * 2
     DEBUG = True
-    # 调度系统密钥
-    SECURITY_KEY = 'df6ebcb8-93c4-11e7-a2ab-9801a7aef71d'
 
     # Upload Config
     # =============
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
     UPLOAD_FOLDER = '../upload/'
-    FRONT_URL = '../carrier-web/'
+    FRONT_URL = '../flask-web/'
     ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'pdf'])
 
 
