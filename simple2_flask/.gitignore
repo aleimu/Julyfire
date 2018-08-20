@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.idea/
+*.log
+test
+
+.cache
+# virtualenv
+.venv
+migrations/

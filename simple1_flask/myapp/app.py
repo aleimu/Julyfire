@@ -29,4 +29,5 @@ def shutdown_session(exception=None):
 
 
 if __name__ == '__main__':
+    print(vars(app))
     app.run()
