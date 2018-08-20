@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 # 配置数据库类型及路径
 SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:lgj123@localhost:3306/simple?charset=utf8'
 # 数据改变后自动提交

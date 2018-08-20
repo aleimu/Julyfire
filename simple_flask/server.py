@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 from myapp.app import app, db
 
 from flask_migrate import Migrate, MigrateCommand
