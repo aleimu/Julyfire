@@ -8,12 +8,18 @@
 import os
 
 from flask import Flask, render_template
-from flask.ext.login import LoginManager
-from flask.ext.bcrypt import Bcrypt
 from flask_mail import Mail
-from flask.ext.debugtoolbar import DebugToolbarExtension
-from flask.ext.sqlalchemy import SQLAlchemy
 
+try:
+    from flask.ext.debugtoolbar import DebugToolbarExtension
+    from flask.ext.sqlalchemy import SQLAlchemy
+    from flask.ext.login import LoginManager
+    from flask.ext.bcrypt import Bcrypt
+except:
+    from flask_debugtoolbar import DebugToolbarExtension
+    from flask_sqlalchemy import SQLAlchemy
+    from flask_login import LoginManager
+    from flask_bcrypt import Bcrypt
 
 ################
 #### config ####
@@ -25,6 +31,7 @@ try:
     app.config.from_object(os.environ['APP_SETTINGS'])
 except:
     from .config import DevelopmentConfig
+
     app.config.from_object(DevelopmentConfig)
 
 ####################
@@ -38,22 +45,21 @@ mail = Mail(app)
 toolbar = DebugToolbarExtension(app)
 db = SQLAlchemy(app)
 
-
 ####################
 #### blueprints ####
 ####################
 
 from project.main.views import main_blueprint
 from project.user.views import user_blueprint
+
 app.register_blueprint(main_blueprint)
 app.register_blueprint(user_blueprint)
-
 
 ####################
 #### flask-login ####
 ####################
 
-from project.models import User
+from project.models.user import User
 
 login_manager.login_view = "user.login"
 login_manager.login_message_category = "danger"

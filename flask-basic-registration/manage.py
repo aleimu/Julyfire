@@ -6,17 +6,21 @@ import unittest
 import coverage
 import datetime
 
-from flask.ext.script import Manager
-from flask.ext.migrate import Migrate, MigrateCommand
+try:
+    from flask.ext.script import Manager
+    from flask.ext.migrate import Migrate, MigrateCommand
+except:
+    from flask_script import Manager
+    from flask_migrate import Migrate, MigrateCommand
 
 from project import app, db
-from project.models import User
-
+from project.models.user import User
 
 try:
     app.config.from_object(os.environ['APP_SETTINGS'])
 except:
     from project.config import DevelopmentConfig
+
     app.config.from_object(DevelopmentConfig)
 
 migrate = Migrate(app, db)
@@ -70,12 +74,6 @@ def drop_db():
 @manager.command
 def create_admin():
     """Creates the admin user."""
-    db.session.add(User("ad@min.com", "admin"))
-    db.session.commit()
-
-@manager.command
-def create_admin():
-    """Creates the admin user."""
     db.session.add(User(
         email="ad@min.com",
         password="admin",
@@ -85,5 +83,8 @@ def create_admin():
     )
     db.session.commit()
 
+
 if __name__ == '__main__':
+    print(vars(app))
+    #app.run()
     manager.run()
