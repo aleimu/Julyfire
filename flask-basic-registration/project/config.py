@@ -23,14 +23,14 @@ class BaseConfig(object):
     MAIL_DEBUG = True
 
     # gmail authentication
-    # MAIL_USERNAME = os.environ['APP_MAIL_USERNAME']
-    # MAIL_PASSWORD = os.environ['APP_MAIL_PASSWORD']
+    MAIL_USERNAME = os.environ['MAIL_USERNAME']
+    MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
     # export APP_MAIL_USERNAME = "foo"
     # export  APP_MAIL_PASSWORD = "bar"
-    MAIL_USERNAME = "lgj_game@163.com"  # 用户名，填邮箱
-    MAIL_PASSWORD = "lgj123"  # 密码，填授权码
+    # MAIL_USERNAME = "youraddress@163.com"  # 用户名，填邮箱
+    # MAIL_PASSWORD = "youset"  # 密码，填授权码
     # mail accounts
-    MAIL_DEFAULT_SENDER = 'lgj_game@163.com'  # 默认发送者，填邮箱
+    MAIL_DEFAULT_SENDER = 'youraddress@163.com'  # 默认发送者，填邮箱
 
 
 class DevelopmentConfig(BaseConfig):
