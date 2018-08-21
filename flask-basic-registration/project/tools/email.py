@@ -1,4 +1,4 @@
-from flask.ext.mail import Message
+from flask_mail import Message
 
 from project import app, mail
 

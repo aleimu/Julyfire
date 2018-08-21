@@ -6,15 +6,14 @@
 #################
 
 from flask import render_template, Blueprint
-from flask.ext.login import login_required
-
+from flask_login import login_required
 
 ################
 #### config ####
 ################
 
 
-main_blueprint = Blueprint('main', __name__,)
+main_blueprint = Blueprint('main', __name__, )
 
 
 ################

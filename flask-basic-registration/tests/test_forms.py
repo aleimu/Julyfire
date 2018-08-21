@@ -3,7 +3,7 @@
 
 import unittest
 
-from project.util import BaseTestCase
+from project.tools.util import BaseTestCase
 from project.user.forms import RegisterForm, LoginForm
 
 

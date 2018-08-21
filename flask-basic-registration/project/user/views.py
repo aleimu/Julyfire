@@ -8,22 +8,23 @@ import datetime
 
 from flask import render_template, Blueprint, url_for, \
     redirect, flash, request
-from flask.ext.login import login_user, logout_user, \
+from flask_login import login_user, logout_user, \
     login_required, current_user
 
-from project.models import User
+from project.models.user import User
 # from project.email import send_email
 from project import db, bcrypt
-from .forms import LoginForm, RegisterForm, ChangePasswordForm
+from .forms import LoginForm, RegisterForm, ChangePasswordForm, ResetForm
 
-from project.token import generate_confirmation_token, confirm_token
-from project.email import send_email
-from project.decorators import check_confirmed
+from project.tools.token import generate_confirmation_token, confirm_token
+from project.tools.email import send_email
+from project.tools.decorators import check_confirmed
+
 ################
 #### config ####
 ################
 
-user_blueprint = Blueprint('user', __name__,)
+user_blueprint = Blueprint('user', __name__, )
 
 
 ################
@@ -92,11 +93,16 @@ def profile():
             user.password = bcrypt.generate_password_hash(form.password.data)
             db.session.commit()
             flash('Password successfully changed.', 'success')
+            subject = "your have change password !"
+            html = "你正在修改你的密码，且已经修改成功!"
+            send_email(current_user.email, subject, html)
+            flash('A new confirmation email has been sent.', 'success')
             return redirect(url_for('user.profile'))
         else:
             flash('Password change was unsuccessful.', 'danger')
             return redirect(url_for('user.profile'))
     return render_template('user/profile.html', form=form)
+
 
 @user_blueprint.route('/confirm/<token>')
 @login_required
@@ -116,6 +122,7 @@ def confirm_email(token):
         flash('You have confirmed your account. Thanks!', 'success')
     return redirect(url_for('main.home'))
 
+
 @user_blueprint.route('/unconfirmed')
 @login_required
 def unconfirmed():
@@ -124,6 +131,7 @@ def unconfirmed():
     flash('Please confirm your account!', 'warning')
     return render_template('user/unconfirmed.html')
 
+
 @user_blueprint.route('/resend')
 @login_required
 def resend_confirmation():
@@ -131,6 +139,65 @@ def resend_confirmation():
     confirm_url = url_for('user.confirm_email', token=token, _external=True)
     html = render_template('user/activate.html', confirm_url=confirm_url)
     subject = "Please confirm your email"
+    # html = "这是一个测试邮件！但经常被拦截。"
     send_email(current_user.email, subject, html)
     flash('A new confirmation email has been sent.', 'success')
     return redirect(url_for('user.unconfirmed'))
+
+
+@user_blueprint.route('/reset/', methods=['GET', 'POST'])
+def reset_password_by_email():
+    form = ResetForm(request.form)
+    if request.method == "GET":
+        return render_template("user/reset_input_email.html", form=form)
+    if request.method == "POST":
+        try:
+            email = form.email.data
+        except:
+            flash('we need your email address!', 'danger')
+        if form.validate_on_submit():
+            user = User.query.filter_by(email=email).first_or_404()
+            if user.confirmed:
+                token = generate_confirmation_token(user.email)
+                reset_url = url_for('user.change_password_by_email', token=token, _external=True)
+                html = render_template('user/activate.html', confirm_url=reset_url)
+                subject = "reset your password by url!"
+                send_email(email, subject, html)
+                flash('reset password email already sended. please check!', 'success')
+            else:
+                flash('check your account!', 'danger')
+            return redirect(url_for('user.login'))
+
+
+@user_blueprint.route('/change/', methods=['GET', 'POST'])
+def change_password_by_email():
+    form_login = LoginForm(request.form)
+    form_reset = ChangePasswordForm(request.form)
+    if request.method == "GET":
+        token = request.values.get("token")
+        if token:
+            try:
+                email = confirm_token(token)
+                User.query.filter_by(email=email).first_or_404()
+            except:
+                flash('The confirmation link is invalid or has expired.', 'danger')
+            return render_template("user/reset_input_password.html", form=form_reset)
+    if request.method == "POST":
+        if form_reset.validate_on_submit():
+            token = request.values.get("token")
+            print("headers:", request.headers.values())
+            email = confirm_token(token)
+            user = User.query.filter_by(email=email).first_or_404()
+            if user:
+                user.password = bcrypt.generate_password_hash(form_reset.password.data)
+                db.session.commit()
+                flash('Password successfully changed.', 'success')
+                subject = "you have change password !"
+                html = "你已成功修改密码，请注意密码安全!"
+                send_email(email, subject, html)
+                flash('A new confirmation email has been sent.', 'success')
+                return redirect(url_for('user.profile'))
+            else:
+                flash('Password change was unsuccessful.', 'danger')
+                return redirect(url_for('user.profile'))
+        return render_template('user/profile.html', form=form_login)
