@@ -1,37 +1,11 @@
-## Welcome to GitHub Pages
-
-You can use the [editor on GitHub](https://github.com/aleimu/Julyfire/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/aleimu/Julyfire/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+#### simple dome for learn python or flask
+- bottle_analyze 是bottle源码的走读和分析，理清web框架的处理流程，了解uwsgi
+- celery_remote_test 是一个简单的通过rabbitmq发送任务到其他celery worker的dome
+- flask_analyze 是对flask 0.1版本源码的走读，Werkzeug、jinja2
+- flask_blueprint 是blueprint的dome
+- flask_db_session 是为了了解flask_sqlalchemy是如何使用db.session使多个请求中改变同一个表的sql操作不相互影响的，也就是请求见线程的独立性
+- flask-basic-registration 是一个简单的用户注册框架，包含了通过email注册、密码重置、登录、退出、密码修改、邮箱确认等
+- simple1_flask flask大型应用的模板
+- simple2_flask flask大型应用的模板
+- summary 一些总结
+- collection 一些总结
