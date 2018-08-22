@@ -7,3 +7,5 @@ migrations
 tmp
 __pycache__
 env.sh
+.idea
+.gitignore

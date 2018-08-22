@@ -101,7 +101,6 @@ def not_found():
 必须指定app.response_class为你自定义的Response
 #http://blog.csdn.net/nunchakushuang/article/details/74645094
 ```
----
 
 #### 模板
 
@@ -114,11 +113,12 @@ http://www.cnblogs.com/Erick-L/p/6873129.html
 if __name__ == '__main__':
     app.run(debug=True)
 ```
-```shell
-__name__=='__main__' 是 Python 的惯常用法，在这里确保直接执行这个脚本时才启动开发Web 服务器。
+    __name__=='__main__': 
+
+是 Python 的惯常用法，在这里确保直接执行这个脚本时才启动开发Web 服务器。
 如果这个脚本由其他脚本引入，程序假定父级脚本会启动不同的服务器，因此不会执行app.run()。
 
-
+```python
 #如果想更改模板和静态文件地址，应该在创建app的时候，给Flask传递关键字参数template_folder、static_folder
 from flask import Flask,render_template
 app = Flask(__name__,template_folder=r'C:\templates',static_folder='/tmp')
@@ -130,7 +130,7 @@ def about():
 #Jinja数据类型：
 Jinja支持许多数据类型，包括：字符串、整型、浮点型、列表、元组、字典、true/false
 
-#运行Jinja2的语句；				{%...%}     
+#运行Jinja2的语句:				{%...%}     
 #在页面中打印Jinja2运行的结果:	{{…}}       
 #注释:		 					{#...#}     
 
