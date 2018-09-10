@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BootStrap Table使用</title>
+
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap-table/1.12.1/bootstrap-table.css" rel="stylesheet">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+
+
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/bootstrap-table.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/locale/bootstrap-table-zh-CN.js"></script>
+
+    <P>bootstrap-table-editable.js对x-editable做了一个简单的封装，增加了列的editable属性以及编辑保存后的一些事件。</P>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/extensions/editable/bootstrap-table-editable.js"></script>
+
+    <p>x-editable组件是一个用于创建可编辑弹出框的插件</p>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/js/bootstrap-editable.js"></script>
+
+</head>
+<body>
+<a href="#" id="username">用户名</a>
+<br>
+<br>
+<br>
+<a href="#" id="department">选择部门</a>
+
+<table id="tb_user">
+
+</table>
+</body>
+
+
+<script type="text/javascript">
+    $(function () {
+        $('#username').editable({
+            type: "text",                //编辑框的类型。支持text|textarea|select|date|checklist等
+            title: "用户名",              //编辑框的标题
+            disabled: false,             //是否禁用编辑
+            emptytext: "空文本",          //空值的默认文本
+            mode: "inline",              //编辑框的模式：支持popup和inline两种模式，默认是popup
+            validate: function (value) { //字段验证
+                if (!$.trim(value)) {
+                    return '不能为空';
+                }
+            }
+        });
+
+    });
+
+    $(function () {
+        $('#department').editable({
+            type: "select",              //编辑框的类型。支持text|textarea|select|date|checklist等
+            source: [{ value: 1, text: "开发部" }, { value: 2, text: "销售部" }, {value:3,text:"行政部"}],
+            title: "选择部门",           //编辑框的标题
+            disabled: false,           //是否禁用编辑
+            emptytext: "空文本",       //空值的默认文本
+            mode: "popup",            //编辑框的模式：支持popup和inline两种模式，默认是popup
+            validate: function (value) { //字段验证
+                if (!$.trim(value)) {
+                    return '不能为空';
+                }
+            }
+        });
+
+    });
+
+    var curRow = {};
+    $(function () {
+        $("#tb_user").bootstrapTable({
+            toolbar: "#toolbar",
+            idField: "Id",
+            pagination: true,
+            showRefresh: true,
+            search: true,
+            clickToSelect: true,
+            queryParams: function (param) {
+                return {};
+            },
+            url: "/Editable/GetUsers",
+            columns: [{
+                checkbox: true
+            }, {
+                field: "UserName",
+                title: "用户名",
+                formatter: function (value, row, index) {
+                    return "<a href=\"#\" name=\"UserName\" data-type=\"text\" data-pk=\""+row.Id+"\" data-title=\"用户名\">" + value + "</a>";
+                }
+            }, {
+                field: "Age",
+                title: "年龄",
+            }, {
+                field: "Birthday",
+                title: "生日",
+                formatter: function (value, row, index) {
+                    var date = eval('new ' + eval(value).source)
+                    return date.format("yyyy年MM月dd日");
+                }
+            },
+            {
+                field: "DeptName",
+                title: "部门"
+            }, {
+                field: "Hodd",
+                title: "爱好"
+            }],
+            onClickRow: function (row, $element) {
+                curRow = row;
+            },
+            onLoadSuccess: function (aa, bb, cc) {
+                $("#tb_user a").editable({
+                    url: function (params) {
+                        var sName = $(this).attr("name");
+                        curRow[sName] = params.value;
+                        $.ajax({
+                            type: 'POST',
+                            url: "/Editable/Edit",
+                            data: curRow,
+                            dataType: 'JSON',
+                            success: function (data, textStatus, jqXHR) {
+                                alert('保存成功！');
+                            },
+                            error: function () { alert("error");}
+                        });
+                    },
+                    type: 'text'
+                });
+            },
+        });
+    });
+</script>
+</html>

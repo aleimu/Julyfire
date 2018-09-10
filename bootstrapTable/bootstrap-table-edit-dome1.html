@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>BootStrap Table以及行内编辑的使用</title>
+
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap-table/1.12.1/bootstrap-table.css" rel="stylesheet">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+    <!--动画效果-->
+    <link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.css" rel="stylesheet">
+
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/bootstrap-table.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/locale/bootstrap-table-zh-CN.js"></script>
+    <!--bootstrap-table-editable.js对x-editable做了一个简单的封装，增加了列的editable属性以及编辑保存后的一些事件。-->
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.12.1/extensions/editable/bootstrap-table-editable.js"></script>
+    <!--x-editable组件是一个用于创建可编辑弹出框的插件-->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/js/bootstrap-editable.js"></script>
+
+    <style>
+	    	.back:hover{cursor: pointer;}
+	    	.fixed-table-toolbar .btn-group>.btn-group:last-child>.btn {
+			    border-top-right-radius: 0px;
+			    border-bottom-right-radius: 0px;
+			}
+			label{width:100px;}
+			.popup_de{
+				background-color:rgba(0,0,0,0.3);
+				width:100%;
+				height: 100%;
+				position:fixed;
+				z-index:999;
+				top:0;
+				left:0;
+				display:none;
+			}
+			.bbox{
+				display: -webkit-box;   /* 老版本语法: Safari, iOS, Android browser, older WebKit browsers. */
+			    display: -moz-box;      /* 老版本语法: Firefox (buggy) */
+			    display: -ms-flexbox;   /* 混合版本语法: IE 10 */
+				display: -webkit-flex;  /* 新版本语法: Chrome 21+ */
+				display: -moz-flex;
+			    display: flex;          /* 新版本语法: Opera 12.1, Firefox 22+ */
+			}
+			.bbox.xycenter{
+				-moz-box-pack: center; /*Firefox*/
+			    -webkit-box-pack: center; /*Safari,Opera,Chrome*/
+			    box-pack: center;
+			    -moz-justify-content: center;
+			    -webkit-justify-content: center;
+			    justify-content: center;
+				-moz-box-align: center; /*Firefox*/
+			    -webkit-box-align:center; /*Safari,Opera,Chrome*/
+			    box-align: center;
+				-moz-align-items: center;
+			    -webkit-align-items: center;
+				align-items:center;
+			}
+			.popup_de .popup_box{
+				width:300px;
+				height:150px;
+				font-family: '微软雅黑';
+				background-color: #fff;
+				border-radius:5px;
+				color:#333;
+			}
+			.popup_de .popup_btn{
+				display: inline-block;
+				width:100px;
+				height:30px;
+				border-radius: 3px;
+				border:1px solid #1ab394;
+				font-size:15px;
+				text-align: center;
+				line-height: 30px;
+				margin-right:15px;
+				cursor: pointer;
+			}
+			.popup_de .show_msg{
+				display: block;
+				width:100%;
+				text-align: center;
+				font-size:18px;
+				margin-top:40px;
+				margin-bottom: 20px;
+				padding:10px;
+			}
+			.popup_de .popup_close{
+				width:30px;
+				height:30px;
+				font-size:25px;
+				text-align: center;
+				display: inline-block;
+		        cursor:pointer;
+		        float: right;
+		        border-top-right-radius: 5px;
+				line-height:30px;
+			}
+			.popup_de .popup_close:hover{
+				background-color: #1ab394;
+				color:#fff;
+			}
+			.popup_de .btn_submit{
+				background-color: #1ab394;
+				color:#fff;
+			}
+			.popup_de .btn_box{
+				text-align: center;
+			}
+	    </style>
+</head>
+<body>
+    <!--表格页面-->
+    <div class="tableBody" style=" padding-left: 10px;padding-right: 10px;">
+        <div class="panel panel-default">
+            <div class="panel-heading">查询条件</div>
+            <div class="tableBody">
+                <form id="formSearch" class="form-horizontal">
+                    <div class="form-group" style="margin-top:15px">
+                        <label class="control-label col-sm-1" for="txt_search_departmentname">部门名称</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="txt_search_departmentname">
+                        </div>
+                        <label class="control-label col-sm-1" for="txt_search_statu">状态</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="txt_search_statu">
+                        </div>
+                        <div class="col-sm-4" style="text-align:left;">
+                            <button type="button" style="margin-left:50px" id="btn_query" class="btn btn-primary">查询</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <div id="toolbar" class="btn-group">
+            <button id="btn_add" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>新增
+            </button>
+            <button id="btn_edit" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>修改
+            </button>
+            <button id="btn_delete" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>删除
+            </button>
+        </div>
+        <!--表格-->
+        <table id="mytable"></table>
+
+    </div>
+
+        <!--增加用户页面-->
+        <div class="addBody" style="width:100%; display: none;position: absolute;top:10px">
+        	<div class="col-sm-12">
+        		<div class="ibox float-e-margins">
+        			<div class="ibox-title">
+	                    <h5>新增用户</h5>
+	                </div>
+	                <div class="ibox-content">
+		                <form id="addForm" method="post" class="form-horizontal" action="target.php">
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">登录名</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="LoginName" id="add_LoginName"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">姓名</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Name" id="add_Name"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed" style="display:none"></div>
+		                    <div class="form-group" style="display:none">
+		                        <label class="col-sm-2 control-label">角色</label>
+		                        <div class="col-sm-10 role add">
+		                        </div>
+		                    </div>
+		                    <div id="pwd">
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">密码</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Pwd" id="add_Pwd"/>
+		                        </div>
+		                    </div>
+							</div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">手机号</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Tel" id="add_Tel"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">邮箱</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Email" id="add_Email"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">状态</label>
+		                        <div class="col-sm-10">
+		                            <label>
+		                                <input type="radio" name="Attribute"  value=1 /> 正常
+		                            </label>
+		                            <label>
+		                                <input type="radio" name="Attribute"  value=2 /> 锁定
+		                            </label>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <div class="col-sm-2 col-sm-offset-2">
+		                            <button type="button" class="btn btn-primary btn-block"  id="add_saveBtn">保存</button>
+		                        </div>
+		                        <div class="col-sm-2 col-sm-offset-1">
+		                            <button type="button" class="btn btn-default btn-block"  id="add_backBtn">返回</button>
+		                        </div>
+		                    </div>
+		                </form>
+		             </div>
+		          </div>
+		       </div>
+		    </div>
+
+        <!--更新用户页面-->
+		<div class="changeBody" style="width:100%; height:500px; display: none;position: absolute;top:10px;">
+        	<div class="col-sm-12">
+        		<div class="ibox float-e-margins">
+        			<div class="ibox-title">
+	                    <h5>修改用户信息</h5>
+	                </div>
+	                <div class="ibox-content">
+		                <form id="editForm" method="post" class="form-horizontal">
+		                 	<div class="form-group" style="display:none" >
+		                 		<label class="col-sm-2 control-label">ID</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="ID" id="edit_ID"/>
+		                        </div>
+		                 	</div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">登录名</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="LoginName" id="edit_LoginName" readonly/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">姓名</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Name" id="edit_Name"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed" style="display:none"></div>
+		                    <div class="form-group" style="display:none">
+		                        <label class="col-sm-2 control-label">角色</label>
+		                        <div class="col-sm-10 role edit"></div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">手机号</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Tel" id="edit_Tel"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">邮箱</label>
+		                        <div class="col-sm-10">
+		                            <input type="text" class="form-control" name="Email" id="edit_Email"/>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <label class="col-sm-2 control-label">状态</label>
+		                        <div class="col-sm-10">
+		                            <label>
+		                                <input type="radio" name="Attribute" value=1  id="edit_Attribute"/> 正常
+		                            </label>
+		                            <label>
+		                                <input type="radio" name="Attribute" value=2 id="edit_Attribute"/> 锁定
+		                            </label>
+		                        </div>
+		                    </div>
+		                    <div class="hr-line-dashed"></div>
+		                    <div class="form-group">
+		                        <div class="col-sm-2 col-sm-offset-2">
+		                            <button type="button" class="btn btn-primary btn-block"  id="edit_saveBtn">保存</button>
+		                        </div>
+		                        <div class="col-sm-2 col-sm-offset-1">
+		                            <button type="button" class="btn btn-default btn-block"  id="edit_backBtn">返回</button>
+		                        </div>
+		                    </div>
+		                </form>
+	                </div>
+        		</div>
+            </div>
+		</div>
+
+        <!--删除用户页面提示-->
+		<div class="popup_de xycenter">
+			<div class="popup_box">
+				<span class="popup_close" value="关闭">×</span>
+			    <span class="show_msg">确定要删除该权限吗？</span>
+			    <div class="btn_box">
+				    <div class="popup_btn btn_submit" value="确定">确定</div>
+					<div class="popup_btn btn_cancel" value="取消">取消</div>
+			    </div>
+			</div>
+		</div>
+
+
+</body>
+
+<script>
+$(function () {
+
+    //1.初始化Table
+    var oTable = new TableInit();
+    oTable.Init();
+
+    //2.初始化Button的点击事件
+    var oButtonInit = new ButtonInit();
+    oButtonInit.Init();
+
+});
+
+
+var TableInit = function () {
+    $("#mytable").bootstrapTable('destroy');
+
+    //根据窗口调整表格高度
+    $(window).resize(function() {
+        $('#mytable').bootstrapTable('resetView', {
+            height: tableHeight()
+        })
+    })
+    function tableHeight() {
+        return $(window).height() - 140;
+        }
+    // http://bootstrap-table.wenzhixin.net.cn/zh-cn/documentation/ 参考文档
+    var oTableInit = new Object();
+    //初始化Table
+    oTableInit.Init = function () {
+        $('#mytable').bootstrapTable({    // mytable 需要匹配html中的class
+            url: 'http://127.0.0.1:5000/get',  //请求后台的URL（*）
+            method: 'get',                      //请求方式（*）
+            queryParams: oTableInit.queryParams,//传递参数（*）
+            sidePagination: "server",           //分页方式：client客户端分页，server服务端分页（*）
+            // http://127.0.0.1:5000/get?limit=10&offset=0&departmentname=&statu=&_=1536129607005
+
+            toolbar: '#toolbar',                //工具按钮用哪个容器
+            striped: true,                      //是否显示行间隔色
+            cache: false,                       //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: true,                     //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 10,                       //每页的记录行数（*）
+            pageList: [10, 25, 50, 100],        //可供选择的每页的行数（*）
+            search: true,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以，个人感觉意义不大
+            strictSearch: true,
+            showColumns: true,                  //是否显示所有的列
+            showRefresh: true,                  //是否显示刷新按钮
+            minimumCountColumns: 1,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            //height: 300,                         //表格高度，如果没有设置height属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:true,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                   //是否显示父子表
+            oolbarAlign:'right',
+            buttonsAlign:'right',//按钮对齐方式
+
+            showExport: true,
+            exportDataType: 'all',
+            exportTypes:[ 'csv', 'txt', 'sql', 'doc', 'excel', 'xlsx', 'pdf'],  //导出文件类型
+
+            // 表头
+            columns: [{
+                checkbox: true
+            }, {
+                field: 'Name',
+                title: '部门名称',
+                sortable:true
+            }, {
+                field: 'ParentName',
+                title: '上级部门'
+            }, {
+                field: 'Level',
+                title: '部门级别',
+                sortable:true,
+                align:'center',
+        		formatter:operateFormatter,
+                editable: {
+                    type: 'text',
+                    title: '1:正常,2:缺货',
+                    validate: function (v) {
+                        if (isNaN(v)) return '必须是数字';
+                        var status = parseInt(v);
+                        if (status <= 0 || status > 2) return '必须1或者2';
+                    }
+                }
+            }, {
+                field: 'Desc',
+                title: '描述',
+                editable: {
+                    type: 'text',
+                    title: 'ScanWeight',
+                    validate: function (v) {
+                        if (isNaN(v)) return '必须是数字';
+                        var status = parseInt(v);
+                        if (status < 0) return '必须是正整数';
+                    }
+                }
+            }, ],
+
+            onEditableSave: function (field, row, oldValue, $el) {
+                $.ajax({
+                    type: "post",
+                    url: "/Edit/",
+                    data: row,
+                    dataType: 'JSON',
+                    success: function (data) {
+                        console.log(data)
+                    },
+                    error: function (err) {
+                        console.log(err)
+                    },
+                    complete: function () {
+                    }
+
+                });
+            }
+        });
+    };
+
+    //查询参数--自定义参数需要和后端一致
+    oTableInit.queryParams = function (params) {
+        var temp = {   //这里的键的名字和控制器的变量名必须一直，这边改动，控制器也需要改成一样的
+            limit: params.limit,   //页面大小
+            offset: params.offset,  //页码
+            departmentname: $("#txt_search_departmentname").val(),
+            statu: $("#txt_search_statu").val(),
+            search: params.search // 查找某一个条件
+        };
+        return temp;
+    };
+    return oTableInit;
+};
+    // 自定义
+   function operateFormatter(value){
+    	if(value==2){
+    		return '2'
+    	}else if(value==1){
+    		return '1'
+    	}else{
+    		return '数据错误'
+    	}
+    }
+
+
+var ButtonInit = function () {
+    var oInit = new Object();
+    var postdata = {};
+    //初始化页面上面的按钮事件--按钮事件对应的函数都要在这里注册一下才能调用到
+    oInit.Init = function () {
+
+        //弹出框取消按钮事件
+        $('.popup_de .btn_cancel').click(function(){
+           $('.popup_de').removeClass('bbox');
+        });
+        //弹出框关闭按钮事件
+        $('.popup_de .popup_close').click(function(){
+           $('.popup_de').removeClass('bbox');
+        });
+
+        //删除事件按钮
+        $('#btn_delete').click(btn_delete);
+        //删除事件按钮
+        $('#addForm').click(addForm);
+
+        //增加按钮事件
+        $('#btn_add').click(function(){
+            $('.tableBody').addClass('animated slideOutLeft');
+            setTimeout(function(){
+                $('.tableBody').removeClass('animated slideOutLeft').css('display','none');
+            },500)
+            $('.addBody').css('display','block');
+            $('.addBody').addClass('animated slideInRight');
+        })
+        };
+
+    return oInit;
+};
+
+//删除事件按钮
+function btn_delete()
+     {
+        console.log("btn_delete");
+        var dataArr=$('#mytable').bootstrapTable('getSelections');
+        console.log("dataArr");
+        $('.popup_de .show_msg').text('确定要删除该用户吗?');
+        $('.popup_de').addClass('bbox');
+        $('.popup_de .btn_submit').one('click',function(){
+            console.log("yes");
+            console.log(dataArr.length)
+            var ID=[];
+            for(var i=0;i<dataArr.length;i++){
+                ID[i]=dataArr[i].ID;
+            }
+
+            $.get("http://127.0.0.1:5000/get",
+                function(data){
+                    if(data){
+                        $('.popup_de .show_msg').text('删除成功！');
+                        $('.popup_de .btn_cancel').css('display','none');
+                        $('.popup_de').addClass('bbox');
+                        $('.popup_de .btn_submit').one('click',function(){
+                            $('.popup_de').removeClass('bbox');
+                        });
+                        $('#mytable').bootstrapTable('refresh', {url: 'http://127.0.0.1:5000/get'});
+                    }else{
+                        $('.popup_de .show_msg').text('删除失败！');
+                    }
+            });
+        })
+    }
+
+function addForm(){
+//请求成功后生成增加用户页面表单内容
+$('#addForm').bootstrapValidator({
+        feedbackIcons: {
+            valid: 'glyphicon glyphicon-ok',
+            invalid: 'glyphicon glyphicon-remove',
+            validating: 'glyphicon glyphicon-refresh'
+        },
+        fields: {
+            LoginName: {
+                validators: {
+                    notEmpty: {
+                        message: '登录名不能为空'
+                    },
+                    stringLength: {
+                        min: 5,
+                        max: 15,
+                        message: '姓名为5-10位'
+                    }
+                }
+            },
+            Name: {
+                validators: {
+                    notEmpty: {
+                        message: '姓名不能为空'
+                    },
+                    stringLength: {
+                        min: 2,
+                        max: 10,
+                        message: '姓名为2-10位'
+                    }
+                }
+            },
+            'RoleID[]': {
+                validators: {
+                    notEmpty: {
+                        message: '角色至少选择一种'
+                    }
+                }
+            },
+            Pwd: {
+                validators: {
+                    notEmpty: {
+                        message: '密码不能为空'
+                    },
+                    stringLength: {
+                        min: 6,
+                        max: 128,
+                        message: '密码为6-128位'
+                    }
+                }
+
+            },
+            Tel: {
+                validators: {
+                    notEmpty: {
+                        message: '手机号不能为空'
+                    },
+                    stringLength: {
+                        min: 11,
+                        max: 11,
+                        message: '手机号必须为11位'
+                    },
+                    regexp: {
+                        regexp: /^1(3|4|5|7|8)\d{9}$/,
+                        message: '请填写正确的手机号'
+                    }
+                }
+            },
+            Email: {
+                validators: {
+                    notEmpty: {
+                        message: '邮箱不能为空'
+                    },
+                    regexp: {
+                        regexp: /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/,
+                        message: '无效的邮箱'
+                    }
+                }
+            },
+            Attribute: {
+                validators: {
+                    notEmpty: {
+                        message: '状态不能为空'
+                    }
+                }
+            }
+        }
+    });
+
+}
+
+
+
+
+</script>
+</html>
